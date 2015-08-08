@@ -2,7 +2,7 @@ package alexym.com.sunshineapp;
 
 import android.content.Intent;
 import android.database.Cursor;
-import android.net.Uri;
+
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
@@ -19,7 +19,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import alexym.com.sunshineapp.data.WeatherContract;
+import alexym.com.sunshineapp.data.WeatherContract.WeatherEntry;
 
 
 /**
@@ -28,12 +28,27 @@ import alexym.com.sunshineapp.data.WeatherContract;
 public class DetailActivityFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
     final String TAG = "DetailActivityFragment";
     private static final String FORECAST_SHARE_HASHTAG = "#SushineApp";
-    private static final int FORECAST_LOADER = 0;
+    private static final int DETAIL_LOADER = 0;
     TextView forecastText;
 
     private ShareActionProvider mShareActionProvider;
     private String mForecast;
-    Uri uri;
+
+    private static final String[] FORECAST_COLUMNS = {
+            WeatherEntry.TABLE_NAME + "." + WeatherEntry._ID,
+            WeatherEntry.COLUMN_DATE,
+            WeatherEntry.COLUMN_SHORT_DESC,
+            WeatherEntry.COLUMN_MAX_TEMP,
+            WeatherEntry.COLUMN_MIN_TEMP,
+    };
+
+    // these constants correspond to the projection defined above, and must change if the
+    // projection changes
+    private static final int COL_WEATHER_ID = 0;
+    private static final int COL_WEATHER_DATE = 1;
+    private static final int COL_WEATHER_DESC = 2;
+    private static final int COL_WEATHER_MAX_TEMP = 3;
+    private static final int COL_WEATHER_MIN_TEMP = 4;
 
 
     public DetailActivityFragment() {
@@ -65,8 +80,13 @@ public class DetailActivityFragment extends Fragment implements LoaderManager.Lo
         Intent shareIntent = new Intent(Intent.ACTION_SEND);
         shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
         shareIntent.setType("text/plain");
-        //shareIntent.putExtra(Intent.EXTRA_TEXT, mForecastStr + FORECAST_SHARE_HASHTAG);
+        shareIntent.putExtra(Intent.EXTRA_TEXT, mForecast + FORECAST_SHARE_HASHTAG);
         return shareIntent;
+    }
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        getLoaderManager().initLoader(DETAIL_LOADER, null, this);
+        super.onActivityCreated(savedInstanceState);
     }
 
 
@@ -74,26 +94,49 @@ public class DetailActivityFragment extends Fragment implements LoaderManager.Lo
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         Intent intent = getActivity().getIntent();
 
-        if (intent != null) {
-            forecastText = (TextView) getView().findViewById(R.id.textview_info);
-            uri = intent.getData();
-            //Log.i(TAG,"es "+mForecastStr);
-            getLoaderManager().initLoader(FORECAST_LOADER, null, this);
+        if (intent == null) {
+            return null;
+
         }
 
-        // Sort order:  Ascending, by date.
-        String sortOrder = WeatherContract.WeatherEntry.COLUMN_DATE + " ASC";
 
-        return new CursorLoader(getActivity(),
-                uri,
-                ForecastFragment.FORECAST_COLUMNS,
+        return new CursorLoader(
+                getActivity(),
+                intent.getData(),
+                FORECAST_COLUMNS,
                 null,
                 null,
-                sortOrder);
-    }//HOLA SOY CODIGO MALICIOSO STRING 'BORRAR TODO'; ME LA PELAN MUAJAJAJAJAJAJAJAAJAJAJAJAJAJAJA
+                null);
+    }
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        Log.v(TAG, "In onLoadFinished");
+        if (!data.moveToFirst()) { return; }
+
+        String dateString = Utility.formatDate(
+                data.getLong(COL_WEATHER_DATE));
+
+        String weatherDescription =
+                data.getString(COL_WEATHER_DESC);
+
+        boolean isMetric = Utility.isMetric(getActivity());
+
+        String high = Utility.formatTemperature(
+                data.getDouble(COL_WEATHER_MAX_TEMP), isMetric);
+
+        String low = Utility.formatTemperature(
+                data.getDouble(COL_WEATHER_MIN_TEMP), isMetric);
+
+        mForecast = String.format("%s - %s - %s/%s", dateString, weatherDescription, high, low);
+
+        TextView detailTextView = (TextView)getView().findViewById(R.id.textview_info);
+        detailTextView.setText(mForecast);
+
+        // If onCreateOptionsMenu has already happened, we need to update the share intent now.
+        if (mShareActionProvider != null) {
+            mShareActionProvider.setShareIntent(createShareForecastIntent());
+        }
 
     }
 
