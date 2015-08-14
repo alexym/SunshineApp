@@ -2,7 +2,6 @@ package alexym.com.sunshineapp;
 
 import android.content.Intent;
 import android.database.Cursor;
-
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
@@ -17,6 +16,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import alexym.com.sunshineapp.data.WeatherContract.WeatherEntry;
@@ -34,12 +34,20 @@ public class DetailActivityFragment extends Fragment implements LoaderManager.Lo
     private ShareActionProvider mShareActionProvider;
     private String mForecast;
 
+    TextView dateTextView,dayTextView,highTextView,lowTextView,detailTextView,humidityTextView,windTextView,pressureTextView;
+    ImageView iconImageView;
+
     private static final String[] FORECAST_COLUMNS = {
             WeatherEntry.TABLE_NAME + "." + WeatherEntry._ID,
             WeatherEntry.COLUMN_DATE,
             WeatherEntry.COLUMN_SHORT_DESC,
             WeatherEntry.COLUMN_MAX_TEMP,
             WeatherEntry.COLUMN_MIN_TEMP,
+            WeatherEntry.COLUMN_HUMIDITY,
+            WeatherEntry.COLUMN_WIND_SPEED,
+            WeatherEntry.COLUMN_PRESSURE,
+            WeatherEntry.COLUMN_DEGREES,
+            WeatherEntry.COLUMN_WEATHER_ID
     };
 
     // these constants correspond to the projection defined above, and must change if the
@@ -49,6 +57,12 @@ public class DetailActivityFragment extends Fragment implements LoaderManager.Lo
     private static final int COL_WEATHER_DESC = 2;
     private static final int COL_WEATHER_MAX_TEMP = 3;
     private static final int COL_WEATHER_MIN_TEMP = 4;
+    private static final int COL_WEATHER_HUMIDITY = 5;
+    private static final int COL_WEATHER_WIND_SPEED = 6;
+    private static final int COL_WEATHER_PRESSURE = 7;
+    private static final int COL_WEATHER_DEGREES = 8;
+    private static final int COL_WEATHER_ID_ICON = 9;
+
 
 
     public DetailActivityFragment() {
@@ -66,11 +80,19 @@ public class DetailActivityFragment extends Fragment implements LoaderManager.Lo
         }
     }
 
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View V = inflater.inflate(R.layout.fragment_detail, container, false);
+        dateTextView = (TextView) V.findViewById(R.id.detail_item_date_textview);
+        dayTextView = (TextView) V.findViewById(R.id.detail_item_day_textview);
+        highTextView = (TextView) V.findViewById(R.id.detail_item_max_textview);
+        lowTextView = (TextView) V.findViewById(R.id.detail_item_min_textview);
+        detailTextView = (TextView) V.findViewById(R.id.detail_item_forecast_textview);
+        humidityTextView = (TextView) V.findViewById(R.id.detail_item_humidity_textview);
+        windTextView = (TextView) V.findViewById(R.id.detail_item_wind_textview);
+        pressureTextView = (TextView) V.findViewById(R.id.detail_item_pressure_textview);
+        iconImageView = (ImageView) V.findViewById(R.id.detail_item_icon);
 
 
         return V;
@@ -88,7 +110,6 @@ public class DetailActivityFragment extends Fragment implements LoaderManager.Lo
         getLoaderManager().initLoader(DETAIL_LOADER, null, this);
         super.onActivityCreated(savedInstanceState);
     }
-
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
@@ -114,33 +135,33 @@ public class DetailActivityFragment extends Fragment implements LoaderManager.Lo
         Log.v(TAG, "In onLoadFinished");
         if (!data.moveToFirst()) { return; }
 
-        String dateString = Utility.formatDate(
-                data.getLong(COL_WEATHER_DATE));
-
+//        String dateString = Utility.formatDate(
+//                );
+        iconImageView.setImageResource(Utility.getArtResourceForWeatherCondition(data.getInt(COL_WEATHER_ID_ICON)));
+        dateTextView.setText(Utility.getDayName(getActivity(), data.getLong(COL_WEATHER_DATE)));
+        dayTextView.setText(Utility.getFormattedMonthDay(getActivity(), data.getLong(COL_WEATHER_DATE)));
+        boolean isMetric = Utility.isMetric(getActivity());
+        String high = Utility.formatTemperature(getActivity(),
+                data.getDouble(COL_WEATHER_MAX_TEMP), isMetric);
+        highTextView.setText(high);
+        String low = Utility.formatTemperature(getActivity(),
+                data.getDouble(COL_WEATHER_MIN_TEMP), isMetric);
+        lowTextView.setText(low);
         String weatherDescription =
                 data.getString(COL_WEATHER_DESC);
-
-        boolean isMetric = Utility.isMetric(getActivity());
-
-        String high = Utility.formatTemperature(
-                data.getDouble(COL_WEATHER_MAX_TEMP), isMetric);
-
-        String low = Utility.formatTemperature(
-                data.getDouble(COL_WEATHER_MIN_TEMP), isMetric);
-
-        mForecast = String.format("%s - %s - %s/%s", dateString, weatherDescription, high, low);
-
-        TextView detailTextView = (TextView)getView().findViewById(R.id.textview_info);
-        detailTextView.setText(mForecast);
+        detailTextView.setText(weatherDescription);
+        humidityTextView.setText(String.format(getActivity().getString(R.string.format_humidity), data.getFloat(COL_WEATHER_HUMIDITY)));
+        windTextView.setText(Utility.getFormattedWind(
+                getActivity(),
+                data.getFloat(COL_WEATHER_WIND_SPEED),
+                data.getFloat(COL_WEATHER_DEGREES)));
+        pressureTextView.setText(String.format(getActivity().getString(R.string.format_pressure), data.getFloat(COL_WEATHER_PRESSURE)));
 
         // If onCreateOptionsMenu has already happened, we need to update the share intent now.
         if (mShareActionProvider != null) {
             mShareActionProvider.setShareIntent(createShareForecastIntent());
         }
-
     }
-
-
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
 
