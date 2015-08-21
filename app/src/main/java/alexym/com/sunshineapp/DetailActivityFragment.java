@@ -103,15 +103,15 @@ public class DetailActivityFragment extends Fragment implements LoaderManager.Lo
             mUri = arguments.getParcelable(DetailActivityFragment.DETAIL_URI);
         }
         View V = inflater.inflate(R.layout.fragment_detail, container, false);
-        dateTextView = (TextView) V.findViewById(R.id.detail_item_date_textview);
-        dayTextView = (TextView) V.findViewById(R.id.detail_item_day_textview);
-        highTextView = (TextView) V.findViewById(R.id.detail_item_max_textview);
-        lowTextView = (TextView) V.findViewById(R.id.detail_item_min_textview);
-        detailTextView = (TextView) V.findViewById(R.id.detail_item_forecast_textview);
-        humidityTextView = (TextView) V.findViewById(R.id.detail_item_humidity_textview);
-        windTextView = (TextView) V.findViewById(R.id.detail_item_wind_textview);
-        pressureTextView = (TextView) V.findViewById(R.id.detail_item_pressure_textview);
-        iconImageView = (ImageView) V.findViewById(R.id.detail_item_icon);
+        dateTextView = (TextView) V.findViewById(R.id.detail_day_textview);
+        dayTextView = (TextView) V.findViewById(R.id.detail_date_textview);
+        highTextView = (TextView) V.findViewById(R.id.detail_high_textview);
+        lowTextView = (TextView) V.findViewById(R.id.detail_low_textview);
+        detailTextView = (TextView) V.findViewById(R.id.detail_forecast_textview);
+        humidityTextView = (TextView) V.findViewById(R.id.detail_humidity_textview);
+        windTextView = (TextView) V.findViewById(R.id.detail_pressure_textview);
+        pressureTextView = (TextView) V.findViewById(R.id.detail_wind_textview);
+        iconImageView = (ImageView) V.findViewById(R.id.detail_icon);
 
 
         return V;

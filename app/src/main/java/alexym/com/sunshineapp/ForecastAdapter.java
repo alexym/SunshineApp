@@ -19,9 +19,13 @@ public class ForecastAdapter extends CursorAdapter {
     private static final int VIEW_TYPE_COUNT = 2;
 
     Context mContext;
+    boolean mUseTodayLayout = true;
     public ForecastAdapter(Context context, Cursor c, int flags) {
         super(context, c, flags);
         mContext = context;
+    }
+    public void setUseTodayLayout(boolean useTodayLayout){
+        mUseTodayLayout = useTodayLayout;
     }
     /**
      * Prepare the weather high/lows for presentation.
@@ -81,7 +85,6 @@ public class ForecastAdapter extends CursorAdapter {
 
         if(getItemViewType(cursor.getPosition()) == VIEW_TYPE_TODAY){
             viewHolder.iconView.setImageResource(Utility.getArtResourceForWeatherCondition(weatherId));
-
         }else {
             viewHolder.iconView.setImageResource(Utility.getIconResourceForWeatherCondition(weatherId));
         }

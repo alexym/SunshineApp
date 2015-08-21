@@ -26,9 +26,10 @@ import alexym.com.sunshineapp.data.WeatherContract;
 /**
  * Created by alexym on 23/06/15.
  */
-public class ForecastFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
+public class ForecastFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
     private final String TAG = "ForecastFragment";
     private static final int FORECAST_LOADER = 0;
+    private boolean mUseTodayLayout = true;
 
     ForecastAdapter mForecastAdapter;
 
@@ -62,6 +63,10 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
     static final int COL_WEATHER_CONDITION_ID = 6;
     static final int COL_COORD_LAT = 7;
     static final int COL_COORD_LONG = 8;
+    private int mIndexList = ListView.INVALID_POSITION;
+    private final String INDEX_TAG = "indexlist";
+
+    ListView mlistView;
 
     public ForecastFragment() {
     }
@@ -71,6 +76,15 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
         super.onCreate(savedInstanceState);
         // Add this line in order for this fragment to handle menu events.
         setHasOptionsMenu(true);
+
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (mIndexList != ListView.INVALID_POSITION) {
+            outState.putInt(INDEX_TAG, mIndexList);
+        }
     }
 
     @Override
@@ -101,14 +115,15 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
         mForecastAdapter = new ForecastAdapter(getActivity(), null, 0);
-        ListView listView = (ListView) rootView.findViewById(R.id.listview_forecast);
-        listView.setAdapter(mForecastAdapter);
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        mlistView = (ListView) rootView.findViewById(R.id.listview_forecast);
+        mlistView.setAdapter(mForecastAdapter);
+        mlistView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
             @Override
             public void onItemClick(AdapterView adapterView, View view, int position, long l) {
                 // CursorAdapter returns a cursor at the correct position for getItem(), or null
                 // if it cannot seek to that position.
+                mIndexList = position;
                 Cursor cursor = (Cursor) adapterView.getItemAtPosition(position);
                 if (cursor != null) {
                     String locationSetting = Utility.getPreferredLocation(getActivity());
@@ -116,26 +131,31 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
 //                            .setData(WeatherContract.WeatherEntry.buildWeatherLocationWithDate(
                     ((Callback) getActivity()).onItemSelected(WeatherContract.WeatherEntry.buildWeatherLocationWithDate(
                             locationSetting, cursor.getLong(COL_WEATHER_DATE)
-                            ));
+                    ));
                     //startActivity(intent);
                 }
             }
         });
+        if (savedInstanceState != null && savedInstanceState.containsKey(INDEX_TAG)) {
+            mIndexList = savedInstanceState.getInt(INDEX_TAG);
+        }
+        mForecastAdapter.setUseTodayLayout(mUseTodayLayout);
         return rootView;
     }
 
-    private void updateWeather(){
+    private void updateWeather() {
         FetchWeatherTask weatherTask = new FetchWeatherTask(getActivity());
         String location = Utility.getPreferredLocation(getActivity());
         weatherTask.execute(location);
 
     }
-    private void openPreferedLocationInMap(){
+
+    private void openPreferedLocationInMap() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
         String location = prefs.getString(getString(R.string.pref_location_key), getString((R.string.pref_location_value)));
         Uri geoLocation = Uri.parse("geo:0,0?")
                 .buildUpon()
-                .appendQueryParameter("q",location)
+                .appendQueryParameter("q", location)
                 .build();
 
         Intent intent = new Intent(Intent.ACTION_VIEW);
@@ -144,11 +164,14 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
             startActivity(intent);
         }
     }
+
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         getLoaderManager().initLoader(FORECAST_LOADER, null, this);
         super.onActivityCreated(savedInstanceState);
+
     }
+
     @Override
     public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
         String locationSetting = Utility.getPreferredLocation(getActivity());
@@ -167,10 +190,13 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
     }
 
 
-
     @Override
     public void onLoadFinished(Loader<Cursor> cursorLoader, Cursor cursor) {
         mForecastAdapter.swapCursor(cursor);
+        if (mIndexList != ListView.INVALID_POSITION) {
+            mlistView.smoothScrollToPosition(mIndexList);
+        }
+
     }
 
     @Override
@@ -178,10 +204,11 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
         mForecastAdapter.swapCursor(null);
     }
 
-    public void onLocationChanged(){
+    public void onLocationChanged() {
         updateWeather();
         getLoaderManager().restartLoader(FORECAST_LOADER, null, this);
     }
+
     /**
      * A callback interface that all activities containing this fragment must
      * implement. This mechanism allows activities to be notified of item
@@ -194,5 +221,11 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
         public void onItemSelected(Uri dateUri);
     }
 
+    public void setUseTodayLayout(boolean useTodayLayout) {
+        mUseTodayLayout = useTodayLayout;
+        if (mForecastAdapter != null) {
+            mForecastAdapter.setUseTodayLayout(mUseTodayLayout);
+        }
+    }
 
 }
