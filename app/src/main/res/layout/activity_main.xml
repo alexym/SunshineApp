@@ -8,7 +8,5 @@
     android:name="alexym.com.sunshineapp.ForecastFragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_marginLeft="16dp"
-    android:layout_marginRight="16dp"
     tools:context="alexym.com.sunshineapp.ForecastFragment"
     tools:layout="@android:layout/list_content" />
