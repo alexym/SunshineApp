@@ -37,6 +37,7 @@
             android:label="@string/title_activity_settings"
             android:theme="@style/SettingsTheme">
         </activity>
+        <service android:name=".service.SunshineService" />
     </application>
 
 </manifest>
