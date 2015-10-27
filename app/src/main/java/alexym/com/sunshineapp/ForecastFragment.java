@@ -22,6 +22,7 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 
 import alexym.com.sunshineapp.data.WeatherContract;
+import alexym.com.sunshineapp.service.SunshineService;
 
 /**
  * Created by alexym on 23/06/15.
@@ -144,9 +145,12 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
     }
 
     private void updateWeather() {
-        FetchWeatherTask weatherTask = new FetchWeatherTask(getActivity());
-        String location = Utility.getPreferredLocation(getActivity());
-        weatherTask.execute(location);
+
+
+        Intent intent = new Intent(getActivity(), SunshineService.class);
+        intent.putExtra(SunshineService.LOCATION_QUERY_EXTRA,
+                Utility.getPreferredLocation(getActivity()));
+        getActivity().startService(intent);
 
     }
 

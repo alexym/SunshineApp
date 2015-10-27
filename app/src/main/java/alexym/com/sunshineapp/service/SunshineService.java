@@ -1,11 +1,16 @@
 package alexym.com.sunshineapp.service;
 
+import android.app.AlarmManager;
 import android.app.IntentService;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.ContentUris;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.SystemClock;
 import android.text.format.Time;
 import android.util.Log;
 import android.widget.ArrayAdapter;
@@ -306,6 +311,20 @@ public class SunshineService extends IntentService {
                 // Wait, that worked?  Yes!
                         return locationId;
 
+    }
+    public static class AlarmReceiver extends BroadcastReceiver{
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            AlarmManager alarmMgr;
+            PendingIntent alarmIntent;
+            alarmMgr = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
+            Intent intentA = new Intent(context, AlarmReceiver.class);
+            alarmIntent = PendingIntent.getBroadcast(context, 0, intentA, 0);
+            alarmMgr.set(AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                    SystemClock.elapsedRealtime() +
+                            5, alarmIntent);
+
+        }
     }
 
 
