@@ -1,8 +1,6 @@
 package alexym.com.sunshineapp.service;
 
-import android.app.AlarmManager;
 import android.app.IntentService;
-import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -10,10 +8,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.SystemClock;
 import android.text.format.Time;
 import android.util.Log;
 import android.widget.ArrayAdapter;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -198,7 +196,7 @@ public class SunshineService extends IntentService {
             // now we work exclusively in UTC
             dayTime = new Time();
 
-            for(int i = 0; i < weatherArray.length(); i++) {
+            for (int i = 0; i < weatherArray.length(); i++) {
                 // These are the values that will be collected.
                 long dateTime;
                 double pressure;
@@ -216,7 +214,7 @@ public class SunshineService extends IntentService {
                 JSONObject dayForecast = weatherArray.getJSONObject(i);
 
                 // Cheating to convert this to UTC time, which is what we want anyhow
-                dateTime = dayTime.setJulianDay(julianStartDay+i);
+                dateTime = dayTime.setJulianDay(julianStartDay + i);
 
                 pressure = dayForecast.getDouble(OWM_PRESSURE);
                 humidity = dayForecast.getInt(OWM_HUMIDITY);
@@ -254,7 +252,7 @@ public class SunshineService extends IntentService {
 
             // add to database
             int inserted = 0;
-            if ( cVVector.size() > 0 ) {
+            if (cVVector.size() > 0) {
 
                 ContentValues[] cvArray = new ContentValues[cVVector.size()];
                 cVVector.toArray(cvArray);
@@ -269,31 +267,31 @@ public class SunshineService extends IntentService {
         }
     }
 
-        /**
-         * Helper method to handle insertion of a new location in the weather database.
-         *
-         * @param locationSetting The location string used to request updates from the server.
-         * @param cityName A human-readable city name, e.g "Mountain View"
-         * @param lat the latitude of the city
-         * @param lon the longitude of the city
-         * @return the row ID of the added location.
-         */
+    /**
+     * Helper method to handle insertion of a new location in the weather database.
+     *
+     * @param locationSetting The location string used to request updates from the server.
+     * @param cityName        A human-readable city name, e.g "Mountain View"
+     * @param lat             the latitude of the city
+     * @param lon             the longitude of the city
+     * @return the row ID of the added location.
+     */
     long addLocation(String locationSetting, String cityName, double lat, double lon) {
         long locationId;
 
         String[] projection = {WeatherContract.LocationEntry._ID};
         long currentId = 0;
         // First, check if the location with this city name exists in the db
-                Cursor locationCursor = this.getContentResolver().query(
-                                WeatherContract.LocationEntry.CONTENT_URI,
-                                new String[]{WeatherContract.LocationEntry._ID},
-                                WeatherContract.LocationEntry.COLUMN_LOCATION_SETTING + " = ?",
-                                new String[]{locationSetting},
-                                null);
-        if(locationCursor.moveToFirst()){
+        Cursor locationCursor = this.getContentResolver().query(
+                WeatherContract.LocationEntry.CONTENT_URI,
+                new String[]{WeatherContract.LocationEntry._ID},
+                WeatherContract.LocationEntry.COLUMN_LOCATION_SETTING + " = ?",
+                new String[]{locationSetting},
+                null);
+        if (locationCursor.moveToFirst()) {
             int locationIdIndex = locationCursor.getColumnIndex(WeatherContract.LocationEntry._ID);
             locationId = locationCursor.getLong(locationIdIndex);
-        }else{
+        } else {
             ContentValues locationValues = new ContentValues();
             locationValues.put(WeatherContract.LocationEntry.COLUMN_LOCATION_SETTING, locationSetting);
             locationValues.put(WeatherContract.LocationEntry.COLUMN_CITY_NAME, cityName);
@@ -301,29 +299,25 @@ public class SunshineService extends IntentService {
             locationValues.put(WeatherContract.LocationEntry.COLUMN_COORD_LONG, lon);
 
             Uri insertedUri = this.getContentResolver().insert(
-                                        WeatherContract.LocationEntry.CONTENT_URI,
-                                        locationValues
-                                        );
+                    WeatherContract.LocationEntry.CONTENT_URI,
+                    locationValues
+            );
             // The resulting URI contains the ID for the row.  Extract the locationId from the Uri.
             locationId = ContentUris.parseId(insertedUri);
         }
         locationCursor.close();
-                // Wait, that worked?  Yes!
-                        return locationId;
+        // Wait, that worked?  Yes!
+        return locationId;
 
     }
-    public static class AlarmReceiver extends BroadcastReceiver{
+
+    public static class AlarmReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            AlarmManager alarmMgr;
-            PendingIntent alarmIntent;
-            alarmMgr = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
-            Intent intentA = new Intent(context, AlarmReceiver.class);
-            alarmIntent = PendingIntent.getBroadcast(context, 0, intentA, 0);
-            alarmMgr.set(AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                    SystemClock.elapsedRealtime() +
-                            5, alarmIntent);
-
+            Intent sendIntent = new Intent(context, SunshineService.class);
+            sendIntent.putExtra(SunshineService.LOCATION_QUERY_EXTRA, intent.getStringExtra(SunshineService.LOCATION_QUERY_EXTRA));
+            context.startService(sendIntent);
+            Toast.makeText(context, "ya se ejecuto", Toast.LENGTH_SHORT).show();
         }
     }
 
